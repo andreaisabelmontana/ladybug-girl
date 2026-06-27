@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ladybug Girl — Meadow</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #87b9e8; font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
+  #app { display: block; width: 100vw; height: 100vh; }
+  #hud {
+    position: fixed; left: 16px; bottom: 16px; color: #fff; z-index: 10;
+    background: rgba(20,40,20,.38); backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.22); border-radius: 12px;
+    padding: 12px 14px; font-size: 13px; line-height: 1.5; max-width: 260px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.4); user-select: none;
+  }
+  #hud b { color: #ffe27a; }
+  #hud .k { display:inline-block; min-width: 18px; text-align:center; padding: 1px 6px; margin: 0 1px;
+            background: rgba(255,255,255,.18); border-radius: 5px; border:1px solid rgba(255,255,255,.25); font-weight:600;}
+  #title { position: fixed; top: 16px; left: 18px; z-index: 10; color:#fff;
+           text-shadow: 0 2px 6px rgba(0,0,0,.45); user-select:none;}
+  #title h1 { font-size: 20px; letter-spacing: .3px; }
+  #title p { font-size: 12px; opacity:.85; }
+  #loading { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+             flex-direction: column; gap: 14px; background: linear-gradient(#bfe0ff, #8ec5f0);
+             color: #2a4a2a; font-size: 18px; transition: opacity .6s ease; }
+  #loading .dot { width: 46px; height: 46px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 38%, #ff5a5a 0 52%, #c22 53% 100%);
+    box-shadow: inset 0 -6px 10px rgba(0,0,0,.25);
+    animation: hop 0.7s ease-in-out infinite; position: relative; }
+  #loading .dot::before, #loading .dot::after { content:''; position:absolute; top:30%; width:7px; height:7px;
+    background:#1a1a1a; border-radius:50%; }
+  #loading .dot::before { left: 30%; } #loading .dot::after { right: 30%; }
+  @keyframes hop { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-16px) } }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+  /* watercolor-paper feel printed over the whole scene */
+  #paper { position: fixed; inset: 0; z-index: 5; pointer-events: none;
+           mix-blend-mode: multiply; opacity: .14; }
+  #vignette { position: fixed; inset: 0; z-index: 6; pointer-events: none;
+              box-shadow: inset 0 0 220px rgba(70,60,30,.34); }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+</head>
+<body>
+  <div id="title"><h1>🐞 Ladybug Girl</h1><p>A little meadow to wander</p></div>
+  <div id="hud">
+    Move <span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span>
+    / <span class="k">↑</span><span class="k">↓</span><span class="k">←</span><span class="k">→</span><br/>
+    Hop <span class="k">Space</span> &nbsp; Run <span class="k">Shift</span><br/>
+    Look <span class="k">drag</span> mouse<br/>
+    <span style="opacity:.8">She <b>strolls</b> through the meadow 🌿</span>
+  </div>
+  <div id="loading"><div class="dot"></div><div>Waking up the meadow…</div></div>
+  <canvas id="paper"></canvas>
+  <div id="vignette"></div>
+  <script>
+    // generate a soft paper-fiber grain once
+    (function () {
+      const p = document.getElementById('paper'); p.width = 320; p.height = 320;
+      const x = p.getContext('2d');
+      x.fillStyle = '#fbf6ea'; x.fillRect(0, 0, 320, 320);
+      for (let i = 0; i < 26000; i++) {
+        const v = 200 + Math.random() * 55 | 0;
+        x.fillStyle = `rgba(${v - 30},${v - 40},${v - 70},${Math.random() * .5})`;
+        x.fillRect(Math.random() * 320, Math.random() * 320, 1, 1);
+      }
+      const fit = () => { p.style.width = innerWidth + 'px'; p.style.height = innerHeight + 'px'; };
+      fit(); addEventListener('resize', fit);
+    })();
+  </script>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
