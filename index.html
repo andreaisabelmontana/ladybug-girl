@@ -7,7 +7,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #87b9e8; font-family: -apple-system, Segoe UI, Roboto, sans-serif; }
-  #app { display: block; width: 100vw; height: 100vh; }
+  #app { display: block; width: 100vw; height: 100vh; touch-action: none; }
   #hud {
     position: fixed; left: 16px; bottom: 16px; color: #fff; z-index: 10;
     background: rgba(20,40,20,.38); backdrop-filter: blur(6px);
@@ -39,6 +39,28 @@
            mix-blend-mode: multiply; opacity: .14; }
   #vignette { position: fixed; inset: 0; z-index: 6; pointer-events: none;
               box-shadow: inset 0 0 220px rgba(70,60,30,.34); }
+  /* touch controls — shown only when a touchscreen is detected (body.touch set in main.js) */
+  #joy, #hop-btn { display: none; }
+  #joy { position: fixed; left: 22px; bottom: 24px; width: 120px; height: 120px; z-index: 20;
+         border-radius: 50%; background: rgba(255,255,255,.14);
+         border: 1px solid rgba(255,255,255,.35); touch-action: none; }
+  #joy-knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px;
+              border-radius: 50%; background: rgba(255,255,255,.45); border: 1px solid rgba(255,255,255,.6); }
+  #hop-btn { position: fixed; right: 26px; bottom: 44px; width: 76px; height: 76px; z-index: 20;
+             border-radius: 50%; background: rgba(255,90,90,.55); border: 1px solid rgba(255,255,255,.4);
+             color: #fff; font-weight: 700; font-size: 15px; align-items: center; justify-content: center;
+             text-shadow: 0 1px 2px rgba(0,0,0,.4); user-select: none; -webkit-user-select: none; touch-action: none; }
+  body.touch #joy { display: block; }
+  body.touch #hop-btn { display: flex; }
+  #hud .touch-only { display: none; }
+  body.touch #hud .kbd-only { display: none; }
+  body.touch #hud .touch-only { display: inline; }
+  body.touch #hud { left: auto; right: 14px; top: 14px; bottom: auto; }
+  /* WebGL context-loss fallback */
+  #ctxlost { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+             flex-direction: column; gap: 10px; background: rgba(20,40,20,.78); color: #fff;
+             font-size: 18px; text-align: center; cursor: pointer; padding: 20px; }
+  #ctxlost.hidden { display: none; }
 </style>
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js" } }
@@ -47,13 +69,22 @@
 <body>
   <div id="title"><h1>🐞 Ladybug Girl</h1><p>A little meadow to wander</p></div>
   <div id="hud">
-    Move <span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span>
-    / <span class="k">↑</span><span class="k">↓</span><span class="k">←</span><span class="k">→</span><br/>
-    Hop <span class="k">Space</span> &nbsp; Run <span class="k">Shift</span><br/>
-    Look <span class="k">drag</span> mouse<br/>
+    <span class="kbd-only">
+      Move <span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span>
+      / <span class="k">↑</span><span class="k">↓</span><span class="k">←</span><span class="k">→</span><br/>
+      Hop <span class="k">Space</span> &nbsp; Run <span class="k">Shift</span><br/>
+      Look <span class="k">drag</span> mouse<br/>
+    </span>
+    <span class="touch-only">
+      Move <b>left pad</b> &nbsp; Hop <b>red button</b><br/>
+      Look <b>drag</b> the meadow<br/>
+    </span>
     <span style="opacity:.8">She <b>strolls</b> through the meadow 🌿</span>
   </div>
-  <div id="loading"><div class="dot"></div><div>Waking up the meadow…</div></div>
+  <div id="loading"><div class="dot"></div><div id="loading-text">Waking up the meadow…</div></div>
+  <div id="joy"><div id="joy-knob"></div></div>
+  <div id="hop-btn">HOP</div>
+  <div id="ctxlost" class="hidden"><div>The meadow lost its graphics context 🍂</div><div><b>Tap to restart</b></div></div>
   <canvas id="paper"></canvas>
   <div id="vignette"></div>
   <script>

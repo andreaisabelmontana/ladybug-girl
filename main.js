@@ -312,7 +312,13 @@ new GLTFLoader().load('./models/ladybug_anim.glb', (gltf) => {
   console.log('clips:', clips.map(c => c.name));
   ready = true;
   fitCountdown = 3;   // fit (scale + ground) after a few renders, once skinned matrices have settled
-}, undefined, (err) => {
+}, (e) => {
+  // GLB download progress on the loading overlay
+  if (e && e.total > 0) {
+    const t = document.getElementById('loading-text');
+    if (t) t.textContent = 'Waking up the meadow… ' + Math.min(100, Math.round(e.loaded / e.total * 100)) + '%';
+  }
+}, (err) => {
   document.getElementById('loading').innerHTML =
     '<div style="color:#a33;padding:20px;text-align:center">Could not load model.<br><small>' + err + '</small></div>';
 });
@@ -330,6 +336,78 @@ addEventListener('resize', () => {
   camera.aspect = VW() / VH(); camera.updateProjectionMatrix();
   renderer.setSize(VW(), VH());
 });
+
+// --- touch controls (mobile) — purely additive; the keyboard path is unchanged ---
+let joyX = 0, joyZ = 0, hopHeld = false;
+(function setupTouch() {
+  if (!('ontouchstart' in window) && !(navigator.maxTouchPoints > 0)) return;
+  const joy = document.getElementById('joy'), knob = document.getElementById('joy-knob');
+  const hop = document.getElementById('hop-btn');
+  if (!joy || !knob || !hop) return;
+  document.body.classList.add('touch');            // reveals pad/button, swaps HUD hints
+  const R = 44;                                    // knob travel radius (px)
+  const DEAD = 0.22;
+  let joyId = -1, cx = 0, cy = 0;
+  const setKnob = (dx, dy) => { knob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)'; };
+  const onJoy = (t) => {
+    let dx = t.clientX - cx, dy = t.clientY - cy;
+    const len = Math.hypot(dx, dy);
+    if (len > R) { dx *= R / len; dy *= R / len; }
+    setKnob(dx, dy);
+    const nx = dx / R, ny = dy / R;
+    joyX = Math.abs(nx) > DEAD ? nx : 0;
+    joyZ = Math.abs(ny) > DEAD ? -ny : 0;          // screen-up = forward
+  };
+  joy.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (joyId !== -1) return;
+    const t = e.changedTouches[0]; joyId = t.identifier;
+    const r = joy.getBoundingClientRect();
+    cx = r.left + r.width / 2; cy = r.top + r.height / 2;
+    onJoy(t);
+  }, { passive: false });
+  joy.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    for (const t of e.changedTouches) if (t.identifier === joyId) onJoy(t);
+  }, { passive: false });
+  const joyEnd = (e) => {
+    for (const t of e.changedTouches) if (t.identifier === joyId) {
+      joyId = -1; joyX = 0; joyZ = 0; setKnob(0, 0);
+    }
+  };
+  joy.addEventListener('touchend', joyEnd);
+  joy.addEventListener('touchcancel', joyEnd);
+  hop.addEventListener('touchstart', (e) => { e.preventDefault(); hopHeld = true; }, { passive: false });
+  hop.addEventListener('touchend', () => { hopHeld = false; });
+  hop.addEventListener('touchcancel', () => { hopHeld = false; });
+  // one-finger drag on the scene orbits the camera (same feel as the mouse drag)
+  let camId = -1, camLastX = 0;
+  renderer.domElement.addEventListener('touchstart', (e) => {
+    e.preventDefault();                            // also suppresses synthetic mouse events
+    if (camId !== -1) return;
+    const t = e.changedTouches[0]; camId = t.identifier; camLastX = t.clientX;
+  }, { passive: false });
+  renderer.domElement.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    for (const t of e.changedTouches) if (t.identifier === camId) {
+      camOrbit -= (t.clientX - camLastX) * 0.005; camLastX = t.clientX;
+    }
+  }, { passive: false });
+  const camEnd = (e) => { for (const t of e.changedTouches) if (t.identifier === camId) camId = -1; };
+  renderer.domElement.addEventListener('touchend', camEnd);
+  renderer.domElement.addEventListener('touchcancel', camEnd);
+})();
+
+// --- WebGL context loss: show a tap-to-restart overlay (hide again if the browser restores) ---
+const ctxLost = document.getElementById('ctxlost');
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();                              // allow the browser to attempt a restore
+  if (ctxLost) ctxLost.classList.remove('hidden');
+});
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+  if (ctxLost) ctxLost.classList.add('hidden');
+});
+if (ctxLost) ctxLost.addEventListener('click', () => location.reload());
 function lerpAngle(a, b, t) {
   let d = (b - a) % (Math.PI * 2);
   if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2;
@@ -353,8 +431,8 @@ function frame() {
     fitCountdown--;
   }
 
-  const inz = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
-  const inx = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
+  const inz = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0) + joyZ;
+  const inx = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0) + joyX;
   const running = keys['ShiftLeft'] || keys['ShiftRight'];
   const speed = running ? RUN_SPEED : WALK_SPEED;
 
@@ -369,7 +447,7 @@ function frame() {
   }
   moveAmt += ((moving ? 1 : 0) - moveAmt) * Math.min(1, dt * 9);
 
-  if (keys['Space'] && grounded) { vy = 7.4; grounded = false; }
+  if ((keys['Space'] || hopHeld) && grounded) { vy = 7.4; grounded = false; }
   vy -= 20 * dt; player.position.y += vy * dt;
   if (player.position.y <= 0) { player.position.y = 0; vy = 0; grounded = true; }
 

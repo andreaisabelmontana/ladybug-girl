@@ -13,10 +13,16 @@ python -m http.server 5250
 Then open http://localhost:5250 — it's plain HTML + ES modules.
 
 ## Controls
+Keyboard:
 - **W A S D** / **Arrow keys** — walk
 - **Shift** — run
 - **Space** — hop
 - **Mouse drag** — orbit the camera
+
+Touch (appears automatically on touchscreens):
+- **Left pad** — walk
+- **HOP button** — hop
+- **One-finger drag** on the scene — orbit the camera
 
 ## The walk (real skeletal animation)
 She moves with a proper **walk cycle keyframed onto your AccuRig skeleton**
