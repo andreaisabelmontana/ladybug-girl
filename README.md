@@ -3,6 +3,8 @@
 A lightweight Three.js third-person storybook world starring the Ladybug Girl model.
 No build step, no internet needed — Three.js is vendored locally.
 
+**Play it live:** https://andreaisabelmontana.github.io/ladybug-girl-meadow/
+
 ## Run it
 From this folder:
 
@@ -59,3 +61,6 @@ Ready-made clips are skeleton-specific. To use one on this character, upload
 `ladybug girl.fbx` to Mixamo (or retarget in Blender), pick a walk, export GLB, and
 replace `models/ladybug_anim.glb` — keep the clip named `walk` (and an `idle`) so the
 game finds them.
+
+## License
+MIT — see [LICENSE](LICENSE).
