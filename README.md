@@ -1,4 +1,4 @@
-# 🐞 Ladybug Girl — Meadow
+# 🐞 Ladybug Girl
 
 A lightweight Three.js third-person storybook world starring the Ladybug Girl model.
 No build step, no internet needed — Three.js is vendored locally.
