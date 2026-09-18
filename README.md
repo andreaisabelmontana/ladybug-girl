@@ -3,7 +3,7 @@
 A lightweight Three.js third-person storybook world starring the Ladybug Girl model.
 No build step, no internet needed — Three.js is vendored locally.
 
-**Play it live:** https://andreaisabelmontana.github.io/ladybug-girl-meadow/
+**Play it live:** https://andreaisabelmontana.github.io/ladybug-girl/
 
 ## Run it
 From this folder:
